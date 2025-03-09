@@ -2,6 +2,7 @@ import { marked } from 'marked'
 import type { RendererOptions } from './types'
 import { MarkdownRenderer } from './renderer'
 import { baseStylesToString } from './styles'
+import type { Tokens } from 'marked'
 
 export class MarkdownParser {
   private options: RendererOptions
@@ -34,39 +35,6 @@ export class MarkdownParser {
           })
         }
       }
-    })
-
-    // 添加脚注支持
-    const options = this.options // 在闭包中保存 options 引用
-    marked.use({
-      extensions: [{
-        name: 'footnote',
-        level: 'inline',
-        start(src: string) { 
-          const match = src.match(/^\[\^([^\]]+)\]/)
-          return match ? match.index : undefined 
-        },
-        tokenizer(src: string) {
-          const match = /^\[\^([^\]]+)\]/.exec(src)
-          if (match) {
-            const token = {
-              type: 'footnote',
-              raw: match[0],
-              text: match[1],
-              tokens: []
-            }
-            return token as any
-          }
-          return undefined
-        },
-        renderer(token: any) {
-          const footnoteStyle = (options?.inline?.footnote || {})
-          const styleStr = Object.entries(footnoteStyle)
-            .map(([key, value]) => `${key}:${value}`)
-            .join(';')
-          return `<sup${styleStr ? ` style="${styleStr}"` : ''}><a href="#fn-${token.text}">[${token.text}]</a></sup>`
-        }
-      }]
     })
 
     // 添加 Mermaid 支持
@@ -156,9 +124,9 @@ export class MarkdownParser {
   // 预处理 markdown 文本
   private preprocessMarkdown(markdown: string): string {
     return markdown
-      // 处理 ** 语法，但排除已经是 HTML 的部分
-      .replace(/(?<!<[^>]*)\*\*([^*]+)\*\*(?![^<]*>)/g, '<strong>$1</strong>')
+      // 移除自定义处理 ** 语法的逻辑，让 marked 库自己处理
+      // .replace(/(?<!<[^>]*)\*\*([^*]+)\*\*(?![^<]*>)/g, '<strong>$1</strong>')
       // 处理无序列表的 - 标记，但排除代码块内的部分
-      .replace(/^(?!\s*```)([ \t]*)-\s+/gm, '$1• ')
+      //.replace(/^(?!\s*```)([ \t]*)-\s+/gm, '$1• ')
   }
 } 
